@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title></title>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+    </head>
+
+    <body>
+        <div>
+            <button class="url-sender">Send me a link!</button>
+        </div>
+        <script>
+            const urlSender = document.querySelector('.url-sender')
+
+            urlSender.addEventListener('click', async () => {
+                // await generateJwt()
+                await emailJwt()
+            })
+
+            const generateJwt = async () => {
+                try {
+                    const response = await fetch('/', { method: 'POST' }).then(
+                        async res => {
+                            return res
+                        },
+                    )
+
+                    const tok = {}
+                    for (const entry of response.headers.entries()) {
+                        if (entry[0] === 'token') {
+                            tok.token = entry[1]
+                        }
+                    }
+
+                    return tok
+                    // TODO: use later...
+                    // if (response.redirected) {
+                    //window.location.href = response.url
+                    //}
+                    // return response.status === 200 ? true : false
+                } catch (err) {
+                    console.error('ERROR :=>', err)
+                }
+            }
+
+            const emailJwt = async () => {
+                const token = await generateJwt()
+                try {
+                    const requestOptions = {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(token),
+                    }
+                    const response = await fetch('/email', requestOptions).then(
+                        async res => {
+                            return res
+                        },
+                    )
+                    return response.status === 200 ? true : false
+                } catch (err) {
+                    console.error('ERROR :=>', err)
+                }
+            }
+        </script>
+    </body>
+</html>
