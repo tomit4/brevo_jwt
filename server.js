@@ -49,13 +49,14 @@ const init = async () => {
         method: 'GET',
         path: '/{token?}',
         handler: (request, h) => {
-            console.log('request.state :=>', request.state) // empty object...
-            const token = request.state.token
+            const token = request.params.token
+                ? request.params.token
+                : request.state.token
             if (token) {
                 const decodedToken = Jwt.token.decode(token)
                 const isValid = validateJwt(decodedToken, 'some_shared_secret')
                 return isValid
-                    ? h.redirect('/secret')
+                    ? h.redirect('/secret').state('token', token)
                     : h.redirect('/signup').unstate('token')
             } else {
                 return h.redirect('/signup')
@@ -67,7 +68,14 @@ const init = async () => {
         method: 'GET',
         path: '/signup',
         handler: (request, h) => {
-            return h.file('index.html')
+            const token = request.state.token
+            if (token) {
+                const decodedToken = Jwt.token.decode(token)
+                const isValid = validateJwt(decodedToken, 'some_shared_secret')
+                return isValid ? h.redirect('/secret') : h.file('index.html')
+            } else {
+                return h.file('index.html')
+            }
         },
     })
 
@@ -107,59 +115,19 @@ const init = async () => {
                     ttlSec: 300, // 5 minutes
                 },
             )
-
-            const response = h.response('success')
-            response.header('token', token)
-            return response
-            // return h.redirect('/').state('token', token)
-        },
-    })
-
-    server.route({
-        method: 'POST',
-        path: '/email',
-        handler: (request, h) => {
-            try {
-                const { token } = request.payload
-                const sendSmtpEmail = {
-                    to: [
-                        {
-                            email: process.env.MY_EMAIL,
-                        },
-                    ],
-                    templateId: 1,
-                    params: {
-                        link: `localhost:3000/verify/${token}`,
+            const sendSmtpEmail = {
+                to: [
+                    {
+                        email: process.env.MY_EMAIL,
                     },
-                }
-                sendinblue(sendSmtpEmail)
-                return h.response('success')
-            } catch (err) {
-                console.error('ERROR :=>', err)
+                ],
+                templateId: 1,
+                params: {
+                    link: `localhost:3000/${token}`,
+                },
             }
-        },
-    })
-
-    server.route({
-        method: 'GET',
-        path: '/verify/{token?}',
-        handler: (request, h) => {
-            console.log('request.state :=>', request.state)
-            const token = request.params.token
-            if (token) {
-                const decodedToken = Jwt.token.decode(token)
-                const isValid = validateJwt(decodedToken, 'some_shared_secret')
-                // Tried to return isValid ? h.redirect('/').state('token', token)
-                // But upon arrival at GET '/', request.state is empty even
-                // though cookies indeed have it as evidenced in devtools...
-                //
-                // Answer might lie: https://github.com/hapijs/hapi/issues/2970
-                return isValid
-                    ? h.file('secret.html').state('token', token)
-                    : h.redirect('/signup').unstate('token')
-            } else {
-                return h.redirect('/signup')
-            }
+            sendinblue(sendSmtpEmail)
+            return h.redirect(`/`)
         },
     })
 

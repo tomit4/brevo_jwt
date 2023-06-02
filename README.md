@@ -6,6 +6,9 @@ This repository is a simple HapiJS server with a very simple frontend that sends
 an authentication email that has a JWT in it, this JWT is then reauthenticated
 if the link sent is copied and pasted into the browser at this time.
 
-**Upcoming challenges include:**
+__TODO:__
 
-- [ ] While the JWT can indeed be authenticated upon navigating to '/validate/${JWT}', the route to home '/', does not currently recognize the stored JWT in the cookie. This needs to be addressed. There is some small clues provided in this hapijs discussion over at their [github repo](https://github.com/hapijs/hapi/issues/2970)
+- [ ] Clean up logic, compartmentalize email parameters
+- [ ] Add other sensitive JWT parameters to .env to enforce better defaults for
+future projects
+- [ ] For personal use, consider using nodemailer instead of Brevo (this might be flawed thinking mind you)
