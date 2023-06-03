@@ -53,6 +53,7 @@ const init = async () => {
                 ? request.params.token
                 : request.state.token
             if (token) {
+                console.log('theres a token!!! :=>')
                 const decodedToken = Jwt.token.decode(token)
                 const isValid = validateJwt(decodedToken, 'some_shared_secret')
                 return isValid
@@ -96,10 +97,12 @@ const init = async () => {
         },
     })
 
+    // NOTE: This route needs some kind of authentication via a parameter of
+    // sorts (email address??)
     server.route({
-        method: 'POST',
-        path: '/',
-        handler: (request, h) => {
+        method: 'GET',
+        path: '/auth',
+        handler: async (request, h) => {
             const token = Jwt.token.generate(
                 {
                     aud: 'urn:audience:test',
@@ -115,6 +118,14 @@ const init = async () => {
                     ttlSec: 300, // 5 minutes
                 },
             )
+            return h.redirect(`/`).state('token', token)
+        },
+    })
+
+    server.route({
+        method: 'POST',
+        path: '/',
+        handler: (request, h) => {
             const sendSmtpEmail = {
                 to: [
                     {
@@ -123,11 +134,12 @@ const init = async () => {
                 ],
                 templateId: 1,
                 params: {
-                    link: `localhost:3000/${token}`,
+                    // doesn't do anything currently, but also don't know how to
+                    // send it in a GET without included in url?
+                    email: 'myemail@email.com',
                 },
             }
             sendinblue(sendSmtpEmail)
-            return h.redirect(`/`)
         },
     })
 
